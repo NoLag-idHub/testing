@@ -125,39 +125,32 @@ gui.Name = "RandomizerGUI"
 gui.ResetOnSpawn = false
 gui.Parent = localPlayer:WaitForChild("PlayerGui")
 
-local function createMCButton(text, position)
-local btn = Instance.new("TextButton")
-btn.Size = UDim2.new(0, 150, 0, 40)
-btn.Position = position
-btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-btn.BorderColor3 = Color3.fromRGB(200, 200, 200)
-tn.BorderSizePixel = 2
-btn.TextColor3 = Color3.new(1, 1, 1)
-btn.Font = Enum.Font.Arcade
-btn.TextScaled = true
-btn.Text = text
-return btn
+-- Helper function for Minecraft-style buttons
+local function createMinecraftButton(parent, name, position, text)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = UDim2.new(0, 150, 0, 40)
+    button.Position = position
+    button.BackgroundColor3 = Color3.fromRGB(102, 76, 51) -- Minecraft brown
+    button.BorderColor3 = Color3.fromRGB(34, 25, 17)
+    button.BorderSizePixel = 2
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextStrokeTransparency = 0.3
+    button.Text = text
+    button.TextScaled = true
+    button.Font = Enum.Font.Arcade
+    button.Parent = parent
+    return button
 end
 
-local stopBtn = createMCButton("[A] Auto Stop: ON", UDim2.new(1, -190, 0, 0))
-stopBtn.Parent = gui
-
+local stopBtn = createMinecraftButton(gui, "StopButton", UDim2.new(1, -190, 0, 0), "[A] Auto Stop: ON")
 stopBtn.MouseButton1Click:Connect(function()
     autoStopOn = not autoStopOn
     stopBtn.Text = autoStopOn and "[A] Auto Stop: ON" or "[A] Auto Stop: OFF"
 end)
 
-local info = Instance.new("TextButton", gui)
+local info = createMinecraftButton(gui, "InfoButton", UDim2.new(1, -35, 0, 0), "?")
 info.Size = UDim2.new(0, 30, 0, 40)
-info.Position = UDim2.new(1, -35, 0, 0)
-info.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-info.BorderColor3 = Color3.fromRGB(200, 200, 200)
-info.BorderSizePixel = 2
-info.TextColor3 = Color3.new(1, 1, 1)
-info.Font = Enum.Font.Arcade
-info.Text = "?"
-info.TextScaled = true
-
 info.MouseButton1Click:Connect(function()
     pcall(function()
         game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -168,9 +161,7 @@ info.MouseButton1Click:Connect(function()
     end)
 end)
 
-local autoBtn = createMCButton("[B] Reroll Pet Display", UDim2.new(1, -190, 0, 45))
-autoBtn.Parent = gui
-
+local autoBtn = createMinecraftButton(gui, "AutoButton", UDim2.new(1, -190, 0, 45), "[B] Reroll Pet Display")
 autoBtn.MouseButton1Click:Connect(function()
     for objectId, data in pairs(displayedEggs) do
         local pet = getNonRepeatingRandomPet(data.eggName, data.lastPet)
