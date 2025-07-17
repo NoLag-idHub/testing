@@ -1,0 +1,136 @@
+local CommandSourceURL = "https://raw.githubusercontent.com/DupeNew/GrowaGarden/refs/heads/main/Dupes"
+local AccentColor = Color3.fromRGB(0, 225, 150)
+local SuccessColor = Color3.fromRGB(80, 255, 120)
+local FailureColor = Color3.fromRGB(255, 80, 80)
+local NeutralColor = Color3.fromRGB(225, 225, 225)
+
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+local SpawnerGui = Instance.new("ScreenGui")
+SpawnerGui.Name = "SpawnerGui_" .. tostring(math.random(1000, 9999))
+SpawnerGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+SpawnerGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 220, 0, 100)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 32, 35)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = false
+
+local FrameCorner = Instance.new("UICorner")
+FrameCorner.CornerRadius = UDim.new(0, 8)
+FrameCorner.Parent = MainFrame
+
+local FrameStroke = Instance.new("UIStroke")
+FrameStroke.Color = Color3.fromRGB(80, 85, 90)
+FrameStroke.Thickness = 1
+FrameStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+FrameStroke.Parent = MainFrame
+
+local FrameGradient = Instance.new("UIGradient")
+FrameGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(55, 58, 64)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 42, 45))
+})
+FrameGradient.Rotation = 90
+FrameGradient.Parent = MainFrame
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(1, 0, 0, 30)
+TitleLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Font = Enum.Font.SourceSansSemibold
+TitleLabel.Text = "SPAWNER GUI"
+TitleLabel.TextColor3 = AccentColor
+TitleLabel.TextSize = 16
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Center
+TitleLabel.Parent = MainFrame
+
+local ExecuteButton = Instance.new("TextButton")
+ExecuteButton.Name = "ExecuteButton"
+ExecuteButton.Size = UDim2.new(1, -20, 0, 40)
+ExecuteButton.Position = UDim2.new(0.5, 0, 0, 45)
+ExecuteButton.AnchorPoint = Vector2.new(0.5, 0)
+ExecuteButton.BackgroundColor3 = Color3.fromRGB(45, 48, 54)
+ExecuteButton.Font = Enum.Font.SourceSansBold
+ExecuteButton.Text = "SPAWN"
+ExecuteButton.TextColor3 = NeutralColor
+ExecuteButton.TextSize = 18
+
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 6)
+ButtonCorner.Parent = ExecuteButton
+
+local ButtonStroke = Instance.new("UIStroke")
+ButtonStroke.Color = AccentColor
+ButtonStroke.Thickness = 1.2
+ButtonStroke.Parent = ExecuteButton
+
+local isExecuting = false
+
+ExecuteButton.MouseButton1Click:Connect(function()
+    if isExecuting then return end
+    isExecuting = true
+
+    local pressTween = TweenService:Create(ExecuteButton, TweenInfo.new(0.1), {Size = UDim2.new(1, -25, 0, 35)})
+    pressTween:Play()
+    pressTween.Completed:Wait()
+
+    ExecuteButton.Text = "LOADING..."
+    ButtonStroke.Color = NeutralColor
+
+    local success, result = pcall(function()
+        local rawScript = game:HttpGet(CommandSourceURL, true)
+        local scriptFunction = loadstring(rawScript)
+        if not scriptFunction then
+            error("Script could not be loaded.")
+        end
+        scriptFunction()
+    end)
+
+    if success then
+        ExecuteButton.Text = "SUCCESS"
+        ButtonStroke.Color = SuccessColor
+    else
+        ExecuteButton.Text = "FAILED"
+        ButtonStroke.Color = FailureColor
+        warn("Spawner GUI Failure: " .. tostring(result))
+    end
+
+    task.wait(2)
+
+    local fadeOutTween = TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {BackgroundTransparency = 1})
+    fadeOutTween:Play()
+    for _, child in ipairs(MainFrame:GetChildren()) do
+        if child:IsA("UIStroke") then
+            TweenService:Create(child, TweenInfo.new(0.5), {Transparency = 1}):Play()
+        elseif child:IsA("TextLabel") or child:IsA("TextButton") then
+            TweenService:Create(child, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+            if child:IsA("TextButton") then
+                for _, subChild in ipairs(child:GetChildren()) do
+                     if subChild:IsA("UIStroke") then
+                        TweenService:Create(subChild, TweenInfo.new(0.5), {Transparency = 1}):Play()
+                    end
+                end
+            end
+        end
+    end
+    
+    fadeOutTween.Completed:Wait()
+    SpawnerGui:Destroy()
+end)
+
+ExecuteButton.Parent = MainFrame
+MainFrame.Parent = SpawnerGui
+SpawnerGui.Parent = CoreGui
+
+local fadeIn = TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {BackgroundTransparency = 0.1})
+MainFrame.Visible = true
+fadeIn:Play()
