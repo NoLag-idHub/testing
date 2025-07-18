@@ -1,0 +1,129 @@
+--// Egg Data
+local eggChances = {
+    ["Common Egg"] = {["Dog"] = 33, ["Bunny"] = 33, ["Golden Lab"] = 33},
+    ["Oasis Egg"] = {["Meerkat"] = 45, ["Sand Snake"] = 34.5, ["Axolotl"] = 15, ["Hyacinth Macaw"] = 5, ["Fennec Fox"] = 0.25},
+    ["Primal Egg"] = {["Iguanodon"] = 18, ["Pachycephalosaurus"] = 15, ["Dilophosaurus"] = 5, ["Ankylosaurus"] = 3, ["Spinosaurus"] = 1},
+    ["Dinosaur Egg"] = {["Raptor"] = 22, ["Triceratops"] = 15, ["Stegosaurus"] = 8, ["Brontosaurus"] = 3, ["T-Rex"] = 1},
+    ["Mythical Egg"] = {["Grey Mouse"] = 37.5, ["Brown Mouse"] = 26.79, ["Squirrel"] = 26.79, ["Red Giant Ant"] = 8.93, ["Red Fox"] = 1.26},
+    ["Bug Egg"] = {["Snail"] = 40, ["Giant Ant"] = 35, ["Caterpillar"] = 25, ["Praying Mantis"] = 4.25, ["Dragon Fly"] = 1},
+    ["Night Egg"] = {["Hedgehog"] = 47, ["Mole"] = 23.5, ["Frog"] = 21.16, ["Echo Frog"] = 8.35, ["Night Owl"] = 3, ["Raccoon"] = 1},
+    ["Bee Egg"] = {["Bee"] = 65, ["Honey Bee"] = 20, ["Bear Bee"] = 10, ["Petal Bee"] = 5, ["Queen Bee"] = 0},
+    ["Anti Bee Egg"] = {["Wasp"] = 55, ["Tarantula Hawk"] = 31, ["Moth"] = 14, ["Butterfly"] = 1, ["Disco Bee"] = 0.25},
+    ["Common Summer Egg"] = {["Starfish"] = 50, ["Seafull"] = 25, ["Crab"] = 25},
+    ["Rare Summer Egg"] = {["Flamingo"] = 30, ["Toucan"] = 25, ["Sea Turtle"] = 20, ["Orangutan"] = 15, ["Seal"] = 10},
+    ["Paradise Egg"] = {["Ostrich"] = 43, ["Peacock"] = 33, ["Capybara"] = 24, ["Scarlet Macaw"] = 3, ["Mimic Octopus"] = 1},
+    ["Premium Night Egg"] = {["Hedgehog"] = 50, ["Mole"] = 26, ["Frog"] = 14, ["Echo Frog"] = 10}
+}
+
+local realESP = {
+    ["Common Egg"] = true, ["Uncommon Egg"] = true, ["Rare Egg"] = true,
+    ["Common Summer Egg"] = true, ["Rare Summer Egg"] = true
+}
+
+--// Services
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "EggRandomizerUI"
+gui.ResetOnSpawn = false
+
+--// UI Setup
+local frame = Instance.new("Frame", gui)
+frame.Position = UDim2.new(0.05, 0, 0.3, 0)
+frame.Size = UDim2.new(0, 250, 0, 150)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.BorderSizePixel = 0
+
+local uicorner = Instance.new("UICorner", frame)
+uicorner.CornerRadius = UDim.new(0, 10)
+
+local title = Instance.new("TextLabel", frame)
+title.Text = "🥚 Egg Randomizer"
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamSemibold
+title.TextSize = 16
+
+local espButton = Instance.new("TextButton", frame)
+espButton.Position = UDim2.new(0, 10, 0, 35)
+espButton.Size = UDim2.new(1, -20, 0, 25)
+espButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+espButton.Text = "🔍 ESP: ON"
+espButton.TextColor3 = Color3.new(1, 1, 1)
+espButton.Font = Enum.Font.Gotham
+espButton.TextSize = 14
+
+local autoButton = espButton:Clone()
+autoButton.Parent = frame
+autoButton.Position = UDim2.new(0, 10, 0, 65)
+autoButton.Text = "🔄 Auto Randomize: OFF"
+
+local onceButton = espButton:Clone()
+onceButton.Parent = frame
+onceButton.Position = UDim2.new(0, 10, 0, 95)
+onceButton.BackgroundColor3 = Color3.fromRGB(100, 20, 20)
+onceButton.Text = "🔴 Randomize Once"
+
+local rareLabel = Instance.new("TextLabel", frame)
+rareLabel.Position = UDim2.new(0, 10, 0, 125)
+rareLabel.Size = UDim2.new(1, -20, 0, 20)
+rareLabel.Text = ""
+rareLabel.TextColor3 = Color3.new(1, 1, 1)
+rareLabel.TextSize = 14
+rareLabel.BackgroundTransparency = 1
+rareLabel.Font = Enum.Font.Gotham
+
+--// Logic
+local espEnabled = true
+local autoRandomize = false
+
+espButton.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    espButton.Text = espEnabled and "🔍 ESP: ON" or "🔍 ESP: OFF"
+end)
+
+autoButton.MouseButton1Click:Connect(function()
+    autoRandomize = not autoRandomize
+    autoButton.Text = autoRandomize and "🔄 Auto Randomize: ON" or "🔄 Auto Randomize: OFF"
+end)
+
+function randomizeEgg()
+    local eggName, pets
+    repeat
+        eggName, pets = next(eggChances)
+    until pets and typeof(pets) == "table"
+
+    local roll = math.random() * 100
+    local total = 0
+    local chosen
+
+    for pet, chance in pairs(pets) do
+        total += chance
+        if roll <= total then
+            chosen = pet
+            break
+        end
+    end
+
+    if chosen then
+        local rare = eggChances[eggName][chosen] and eggChances[eggName][chosen] <= 5
+        if rare then
+            rareLabel.Text = "Rare Pet Found! (" .. chosen .. ")"
+        else
+            rareLabel.Text = ""
+        end
+    end
+end
+
+onceButton.MouseButton1Click:Connect(randomizeEgg)
+
+-- Auto-randomizer
+task.spawn(function()
+    while true do
+        if autoRandomize then
+            randomizeEgg()
+        end
+        task.wait(2)
+    end
+end)
