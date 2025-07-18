@@ -1,168 +1,101 @@
-local players = game:GetService("Players")
-local collectionService = game:GetService("CollectionService")
-local localPlayer = players.LocalPlayer or players:GetPlayers()[1]
+local player = game.Players.LocalPlayer
+local backpack = player:WaitForChild("Backpack")
 
-local eggChances = {
-    ["Common Egg"] = {["Dog"] = 33, ["Bunny"] = 33, ["Golden Lab"] = 33},
-    ["Uncommon Egg"] = {["Black Bunny"] = 25, ["Chicken"] = 25, ["Cat"] = 25, ["Deer"] = 25},
-    ["Dinosaur Egg"] = {["Meerkat"] = 33, ["Triceratops"] = 25, ["Stegosaurus"] = 15, ["Brontosaurus"] = 3, ["T-Rex	"] = 1},
-    ["Oasis Egg"] = {["Cow"] = 42.55, ["Sand Snake"] = 18, ["Axolotl"] = 10, ["Hyacinth Macaw"] = 3, ["Fennec Fox"] = 1},
-    ["Mythical Egg"] = {["Grey Mouse"] = 37.5, ["Brown Mouse"] = 26.79, ["Squirrel"] = 26.79, ["Red Giant Ant"] = 8.93, ["Red Fox"] = 1},
-    ["Bug Egg"] = {["Snail"] = 40, ["Giant Ant"] = 35, ["Caterpillar"] = 25, ["Praying Mantis"] = 4.25, ["Dragon Fly"] = 1},
-    ["Night Egg"] = {["Hedgehog"] = 47, ["Mole"] = 23.5, ["Frog"] = 21.16, ["Echo Frog"] = 8.35, ["Night Owl"] = 4, ["Raccoon"] = 1},
-    ["Bee Egg"] = {["Bee"] = 65, ["Honey Bee"] = 20, ["Bear Bee"] = 10, ["Petal Bee"] = 5, ["Queen Bee"] = 1},
-    ["Anti Bee Egg"] = {["Wasp"] = 55, ["Tarantula Hawk"] = 31, ["Moth"] = 14, ["Butterfly"] = 1, ["Disco Bee"] = 0,25},
-    ["Common Summer Egg"] = {["Starfish"] = 50, ["Seagull"] = 25, ["Crab"] = 25},
-    ["Rare Summer Egg"] = {["Flamingo"] = 30, ["Toucan"] = 25, ["Sea Turtle"] = 20, ["Orangutan"] = 15, ["Seal"] = 10},
-    ["Paradise Egg"] = {["Ostrich"] = 43, ["Peacock"] = 33, ["Capybara"] = 24, ["Scarlet Macaw"] = 3, ["Mimic Octopus"] = 1},
-    ["Primal Egg"] = {["Pachycephalosaurus"] = 15, ["Dilophosaurus"] = 5, ["Ankylosaurus"] = 3, ["Spinosaurus"] = 1}
-}
-
-local realESP = {
-    ["Common Egg"] = true, ["Uncommon Egg"] = true, ["Rare Egg"] = true,
-    ["Common Summer Egg"] = true, ["Rare Summer Egg"] = true
-}
-
-local displayedEggs = {}
-local autoStopOn = true
-
-local function weightedRandom(options)
-    local valid = {}
-    for pet, chance in pairs(options) do
-        if chance > 0 then table.insert(valid, {pet = pet, chance = chance}) end
-    end
-    if #valid == 0 then return nil end
-    local total = 0
-    for _, v in ipairs(valid) do total += v.chance end
-    local roll = math.random() * total
-    local cumulative = 0
-    for _, v in ipairs(valid) do
-        cumulative += v.chance
-        if roll <= cumulative then return v.pet end
-    end
-    return valid[1].pet
-end
-
-local function getNonRepeatingRandomPet(eggName, lastPet)
-    local pool = eggChances[eggName]
-    if not pool then return nil end
-    local tries, selectedPet = 0, lastPet
-    while tries < 5 do
-        local pet = weightedRandom(pool)
-        if not pet then return nil end
-        if pet ~= lastPet or math.random() < 0.3 then
-            selectedPet = pet
-            break
-        end
-        tries += 1
-    end
-    return selectedPet
-end
-
-local function createEspGui(object, labelText)
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "FakePetESP"
-    billboard.Adornee = object:FindFirstChildWhichIsA("BasePart") or object.PrimaryPart or object
-    billboard.Size = UDim2.new(0, 200, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-    billboard.AlwaysOnTop = true
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.TextStrokeTransparency = 0
-    label.TextScaled = true
-    label.Font = Enum.Font.SourceSansBold
-    label.Text = labelText
-    label.Parent = billboard
-
-    billboard.Parent = object
-    return billboard
-end
-
-local function addESP(egg)
-    if egg:GetAttribute("OWNER") ~= localPlayer.Name then return end
-    local eggName = egg:GetAttribute("EggName")
-    local objectId = egg:GetAttribute("OBJECT_UUID")
-    if not eggName or not objectId or displayedEggs[objectId] then return end
-
-    local labelText, firstPet
-    if realESP[eggName] then
-        labelText = eggName
-    else
-        firstPet = getNonRepeatingRandomPet(eggName, nil)
-        labelText = eggName .. " | " .. (firstPet or "?")
-    end
-
-    local espGui = createEspGui(egg, labelText)
-    displayedEggs[objectId] = {
-        egg = egg,
-        gui = espGui,
-        label = espGui:FindFirstChild("TextLabel"),
-        eggName = eggName,
-        lastPet = firstPet
-    }
-end
-
-local function removeESP(egg)
-    local objectId = egg:GetAttribute("OBJECT_UUID")
-    if objectId and displayedEggs[objectId] then
-        displayedEggs[objectId].gui:Destroy()
-        displayedEggs[objectId] = nil
-    end
-end
-
-for _, egg in collectionService:GetTagged("PetEggServer") do
-    addESP(egg)
-end
-
-collectionService:GetInstanceAddedSignal("PetEggServer"):Connect(addESP)
-collectionService:GetInstanceRemovedSignal("PetEggServer"):Connect(removeESP)
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "EggRandomizerUI"
+-- GUI Setup
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "DuplicationGui"
 gui.ResetOnSpawn = false
-gui.Parent = localPlayer:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame", gui)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.Position = UDim2.new(0.5, -100, 0.1, 0)
-frame.Size = UDim2.new(0, 200, 0, 180)
-frame.AnchorPoint = Vector2.new(0.5, 0)
+frame.Size = UDim2.new(0, 250, 0, 180)
+frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 frame.BorderSizePixel = 0
-frame.BackgroundTransparency = 0.1
+frame.Active = true
+frame.Draggable = true
 
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", frame).Color = Color3.fromRGB(0, 170, 255)
+
+-- Title
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "Grow a Garden Dupe"
+title.Size = UDim2.new(1, 0, 0.2, 0)
 title.BackgroundTransparency = 1
-title.TextColor3 = Color3.new(1, 1, 1)
 title.TextScaled = true
+title.TextColor3 = Color3.fromRGB(0, 255, 127)
 title.Font = Enum.Font.GothamBold
-title.Text = "🥚 Egg Randomizer"
 
-local function createButton(text, yPos)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -20, 0, 30)
-    btn.Position = UDim2.new(0, 10, 0, yPos)
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.Gotham
-    btn.TextScaled = true
-    btn.Text = text
-    btn.Parent = frame
-    return btn
+-- Textbox
+local textBox = Instance.new("TextBox", frame)
+textBox.PlaceholderText = "Type a Number"
+textBox.Text = ""
+textBox.Position = UDim2.new(0.1, 0, 0.3, 0)
+textBox.Size = UDim2.new(0.8, 0, 0.2, 0)
+textBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+textBox.TextScaled = true
+textBox.ClearTextOnFocus = false
+Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 8)
+
+-- Button
+local button = Instance.new("TextButton", frame)
+button.Text = "Duplicate"
+button.Position = UDim2.new(0.25, 0, 0.6, 0)
+button.Size = UDim2.new(0.5, 0, 0.2, 0)
+button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+button.TextScaled = true
+Instance.new("UICorner", button).CornerRadius = UDim.new(0, 8)
+
+-- Animated Notification
+local notification = Instance.new("TextLabel", gui)
+notification.Size = UDim2.new(0, 250, 0, 50)
+notification.Position = UDim2.new(0.5, -125, -0.2, 0)
+notification.AnchorPoint = Vector2.new(0.5, 0)
+notification.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+notification.TextColor3 = Color3.new(1, 1, 1)
+notification.TextScaled = true
+notification.Text = ""
+notification.Visible = false
+notification.ZIndex = 5
+Instance.new("UICorner", notification).CornerRadius = UDim.new(0, 10)
+
+-- Show notification with animation
+local function showNotification(message)
+	notification.Text = message
+	notification.Visible = true
+	notification.Position = UDim2.new(0.5, -125, -0.1, 0)
+	
+	-- Tween in
+	game:GetService("TweenService"):Create(notification, TweenInfo.new(0.4), {
+		Position = UDim2.new(0.5, -125, 0.05, 0)
+	}):Play()
+	
+	wait(2)
+	
+	-- Tween out
+	game:GetService("TweenService"):Create(notification, TweenInfo.new(0.4), {
+		Position = UDim2.new(0.5, -125, -0.2, 0)
+	}):Play()
+	wait(0.4)
+	notification.Visible = false
 end
 
-local espButton = createButton("🔍 ESP: ON", 35)
-local autoRandomButton = createButton("🔄 Auto Randomize: OFF", 70)
-local randomizeOnceButton = createButton("🔴 Randomize Once", 105)
-
-local statusLabel = Instance.new("TextLabel", frame)
-statusLabel.Size = UDim2.new(1, -10, 0, 25)
-statusLabel.Position = UDim2.new(0, 5, 1, -25)
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.new(1, 1, 1)
-statusLabel.TextScaled = true
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.Text = "Devine Pet Found!"
+-- Duplication Functionality
+button.MouseButton1Click:Connect(function()
+	local count = tonumber(textBox.Text)
+	if not count or count <= 0 then return end
+	
+	local tool = player.Character:FindFirstChildOfClass("Tool") or backpack:FindFirstChildOfClass("Tool")
+	if not tool then
+		showNotification("No pet/seed/crop found!")
+		return
+	end
+	
+	for i = 1, count do
+		local clone = tool:Clone()
+		clone.Parent = backpack
+	end
+	
+	showNotification("Duplicated " .. count .. " " .. tool.Name .. "(s)!")
+end)
